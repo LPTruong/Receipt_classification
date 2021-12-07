@@ -6,11 +6,8 @@ from variable import _dir
 
 # TODO: Text segmentation
 
-image = cv2.imread(_dir + "phuclong1.jpg")
 
 # TODO: Find all potential text boxes (box everything)
-
-image_cpy = image.copy()
 
 
 def findBoundingBox(image, segmenation_blur_params, segmenation_erode_params):

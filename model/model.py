@@ -4,7 +4,7 @@ import cv2
 
 from variable import _dir, pretrain_dir
 
-df = pd.read_csv(pretrain_dir + "label_highland.csv")
+#df = pd.read_csv(pretrain_dir + "label_highland.csv")
 
 # Final ML model with full datas
 ridge_path = pretrain_dir + "ridge_highland.sav"

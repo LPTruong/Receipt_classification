@@ -43,6 +43,8 @@ if __name__ == "__main__":
         elif label == -1:
             print(filename)
             fail_process += 1
+        print(label)
+        print(cnt_predict)
 
     run_time = time.time() - start_time
 

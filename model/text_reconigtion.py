@@ -6,4 +6,4 @@ def is_blue(image):
   low_blue = np.array([125, 0, 0])
   high_blue = np.array([160, 360, 360])
   blue_mask = cv2.inRange(hsv_frame, low_blue, high_blue)
-  return (np.sum(blue_mask > 100) > 4)
+  return (np.sum(blue_mask > 100) > 15)

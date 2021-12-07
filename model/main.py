@@ -7,7 +7,7 @@ import time
 import sys
 import cv2
 
-from model.simple_ocr import HoadonOCR
+from simple_ocr import HoadonOCR
 
 if __name__ == "__main__":
 

@@ -2,38 +2,17 @@ import pandas as pd
 import numpy as np
 import cv2
 from sklearn.cluster import KMeans
-from variable import __dir
+from variable import _dir, image_shape
 
 # 1. Image preprocessing
 # TODO: Assumption : receipt have white color, separate from background, rectangle shape
 
 pd.set_option('display.max_colwidth', None)
-
-vertical = np.array([])
-for i in range(1, 11):
-    file_name = __dir + "image" + str(i) + ".jpg"
-    image = cv2.imread(file_name, cv2.IMREAD_COLOR)
-    image = cv2.resize(image, (600, 600))
-    if i == 1 or i == 6:
-        vertical = image
-    else:
-        vertical = np.hstack((vertical, image))
-    if i % 5 == 0:
-        cv2.imshow("image", vertical)
-        cv2.waitKey(0)
-        print(file_name)
-
 # 1.1. Edge Detection
 # TODO: Use bilateral filter the image to reduce noise,
 #  blur and dilated to mostly clear text on the receipt,
 #  convert to HSV and keep the S dimension to separate white region,
 #  then apply adaptive threshold -> Canny
-
-file_name = __dir + "image10.jpg"
-image = cv2.imread(file_name, cv2.IMREAD_COLOR)
-image_resize = cv2.resize(image, (600, 600))
-gray = cv2.cvtColor(image_resize, cv2.COLOR_BGR2GRAY)
-
 
 def background_threshold(test_image, blur_param=7, type_threshold=1):
     """Thresholding to separate the background"""
@@ -65,11 +44,6 @@ def edge_detection(gray, blur_param=7, aperture_size=3, type_threshold=1):
     edged = cv2.Canny(bordered, 100, 200, apertureSize=aperture_size)
     return edged
 
-
-cv2.imshow("image", edge_detection(image_resize, 5, 7))
-cv2.waitKey(0)
-
-
 # 1.2. Hough transform
 def intersection(line1, line2):
     """
@@ -91,7 +65,7 @@ def intersection(line1, line2):
 def segmented_intersections(lines):
     """Finds the intersections between groups of lines."""
     intersections = []
-    margin = image_resize.shape[0] / 3
+    margin = image_shape[0] / 3
     for i, group in enumerate(lines[:-1]):
         for next_group in lines[i + 1:]:
             for line1 in group:
@@ -99,14 +73,14 @@ def segmented_intersections(lines):
                     if abs(line1[1] - line2[1]) < 1e-3:
                         continue
                     point = intersection(line1, line2)
-                    if (-margin <= point[0] <= image_resize.shape[0] + margin
-                            and -margin <= point[1] <= image_resize.shape[1] + margin):
+                    if (-margin <= point[0] <= image_shape[0] + margin
+                            and -margin <= point[1] <= image_shape[1] + margin):
                         intersections.append(intersection(line1, line2))
     return intersections
 
 
 def detect_hough_line(edged):
-    lines = cv2.HoughLines(edged, rho=1, theta=np.pi / 180, threshold=image_resize.shape[0] // 6)
+    lines = cv2.HoughLines(edged, rho=1, theta=np.pi / 180, threshold=image_shape[0] // 6)
     if lines is None:
         lines = np.array([[[0, 0]], [[0, np.pi / 2]], [[600, 0]], [[600, np.pi / 2]]])
         return lines
@@ -136,31 +110,6 @@ def trim_line(lines):
                     continue
     lines = np.delete(lines, to_remove, axis=0)
     return lines
-
-
-# Plot hough line and intersections
-lines = trim_line(detect_hough_line(edge_detection(image_resize)))
-hough_intersections = segmented_intersections(lines)
-hough_img = image_resize.copy()
-
-for line in lines:
-    rho, theta = line[0]
-    a = np.cos(theta)
-    b = np.sin(theta)
-    x0 = a * rho
-    y0 = b * rho
-    x1 = int(x0 + 1000 * (-b))
-    y1 = int(y0 + 1000 * a)
-    x2 = int(x0 - 1000 * (-b))
-    y2 = int(y0 - 1000 * a)
-    cv2.line(hough_img, (x1, y1), (x2, y2), (0, 0, 255), 2)
-
-for x, y in hough_intersections:
-    hough_img = cv2.circle(hough_img, (x, y), radius=0, color=(0, 255, 255), thickness=10)
-cv2.imshow("IMAGE", hough_img)
-cv2.waitKey(0)
-hough_intersections = np.array(hough_intersections)
-
 
 # 1.3. Select detected lines to crop
 # TODO: Cluster hough lines into two sets base on theta value
@@ -277,11 +226,6 @@ def get_best_corners(lines):
     # print(best_score)
     return best_corners
 
-
-best_corners = get_best_corners(lines)
-print(best_corners)
-
-
 # Transform receipt to the bird eye view
 def four_point_transform(image, pts):
     rect = order_points(pts)
@@ -307,13 +251,6 @@ def four_point_transform(image, pts):
     return warped
 
 
-cropped = four_point_transform(image_resize, best_corners)
-cropped = cv2.resize(cropped, (600, 600), cv2.INTER_CUBIC)
-w_cropped = cropped
-cv2.imshow("cropped", cropped)
-cv2.waitKey(0)
-
-
 # Highlight text
 def text_highligh(image):
     blurred = cv2.bilateralFilter(image, 5, 20, 20)
@@ -323,10 +260,6 @@ def text_highligh(image):
     blurred = clahe.apply(blurred)
     mask = cv2.adaptiveThreshold(blurred, 250, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 201, 51)
     return mask
-
-
-highligh = text_highligh(cropped)
-
 
 # Preprocessing function
 def preprocessing(__image):
@@ -354,20 +287,3 @@ def preprocessing(__image):
     cropped = cv2.resize(cropped, (600, 600), cv2.INTER_CUBIC)
 
     return cropped
-
-
-# Test on 10 images
-
-vertical = np.array([])
-for i in range(1, 11):
-    file_name = __dir + "image" + str(i) + ".jpg"
-    image = cv2.imread(file_name, cv2.IMREAD_COLOR)
-    cropped = cv2.resize(preprocessing(image), (600, 600), cv2.INTER_NEAREST)
-    cropped = text_highligh(cropped)
-    if i == 1 or i == 6:
-        vertical = cropped
-    else:
-        vertical = np.hstack((vertical, cropped))
-    if i % 5 == 0:
-        cv2.imshow("test", vertical)
-        cv2.waitKey(0)

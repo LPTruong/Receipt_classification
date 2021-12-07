@@ -1,18 +1,16 @@
 import cv2
 from preprocess import preprocessing
 import numpy as np
-
-from variable import __dir
+from variable import _dir, segmenation_blur_params ,segmenation_erode_params
+from variable import _dir
 
 # TODO: Text segmentation
 
-image = cv2.imread(__dir + "phuclong1.jpg")
+image = cv2.imread(_dir + "phuclong1.jpg")
 
 # TODO: Find all potential text boxes (box everything)
 
 image_cpy = image.copy()
-segmenation_blur_params = [5, 9, 15]
-segmenation_erode_params = [(3, 11), (11, 3), (25, 1), (1, 25)]
 
 
 def findBoundingBox(image, segmenation_blur_params, segmenation_erode_params):
@@ -40,80 +38,45 @@ def findBoundingBox(image, segmenation_blur_params, segmenation_erode_params):
     boxes = list(dict.fromkeys(boxes))
     return boxes
 
-
-# TODO: Finally show the image
-
-boxes = findBoundingBox(image, segmenation_blur_params, segmenation_erode_params)
-cropped = preprocessing(image)
-for box in boxes:
-    x, y, w, h = box
-    if h < w:
-        cv2.rectangle(cropped, (x, y), (x + w, y + h), (0, 255, 0), 1)
-cv2.imshow("final image", cropped)
-cv2.waitKey(0)
-len(boxes)
-
 # TODO: Remove non-text boxes
 # Delete similar boxes
+def trim_boxes(boxes):
+  to_be_delete = [False]*len(boxes)
+  for i,box1 in enumerate(boxes):
+      x,y,w,h = box1
+      for j,box2 in enumerate(boxes):
+        if (i >= j):
+          continue
+        x2,y2,w2,h2 = box2
+        if ((abs(x-x2) + abs(y-y2)) < 20 and (abs(w - w2) + abs(h-h2)) < 20):
+          to_be_delete[j] = True;
+  new_boxes = []
+  for i in range(0, len(boxes)):
+    if (to_be_delete[i] == False):
+      new_boxes.append(boxes[i])
+  boxes = new_boxes
+  return boxes
 
-to_be_delete = [False] * len(boxes)
-for i, box1 in enumerate(boxes):
-    x, y, w, h = box1
-    for j, box2 in enumerate(boxes):
-        if i >= j:
-            continue
-        x2, y2, w2, h2 = box2
-        if (abs(x - x2) + abs(y - y2)) < 20 and (abs(w - w2) + abs(h - h2)) < 20:
-            to_be_delete[j] = True
-new_boxes = []
-for i in range(0, len(boxes)):
-    if not to_be_delete[i]:
-        new_boxes.append(boxes[i])
-boxes = new_boxes
-
-# TODO: Finally show the image
-cropped = preprocessing(image)
-for box in boxes:
-    x, y, w, h = box
-    cv2.rectangle(cropped, (x, y), (x + w, y + h), (0, 255, 0), 1)
-    # print(box)
-cv2.imshow("final cropped", cropped)
-len(boxes)
+def remove_non_text(boxes, image):
+  to_be_delete = [False]*len(boxes)
+  for i,box1 in enumerate(boxes):
+    crop_box = image[box1[1] : box1[1] + box1[3],\
+                        box1[0] : box1[0] + box1[2]]
+    crop_box = cv2.cvtColor(crop_box, cv2.COLOR_BGR2GRAY)
+    ret,crop_box = cv2.threshold(crop_box,125,255,cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    ratio = np.sum(crop_box > 125)/ (crop_box.shape[0] * crop_box.shape[1])
+    if (ratio < 0.15 or ratio > 0.55):
+      to_be_delete[i] = True;
+  new_boxes = []
+  for i in range(0, len(boxes)):
+    if (to_be_delete[i] == False):
+      new_boxes.append(boxes[i])
+  boxes = new_boxes
+  return boxes
 
 # Text recognition
 
 text_image_shape = (150, 30)
-
-# Feature engineering
-
-cropped = preprocessing(image)
-text_box = (265, 220, 90, 15)
-text_image = cropped[text_box[1]: text_box[1] + text_box[3], text_box[0]: text_box[0] + text_box[2]]
-text_image = cv2.resize(text_image, text_image_shape)
-kernel = np.array([[0, -1, 0],
-                   [-1, 5, -1],
-                   [0, -1, 0]])
-text_image = cv2.filter2D(src=text_image, ddepth=-1, kernel=kernel)
-text_image_gray = cv2.cvtColor(text_image, cv2.COLOR_BGR2GRAY)
-ret, text_image_gray = cv2.threshold(text_image_gray, 125, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-
-cv2.imshow("logo", text_image)
-cv2.waitKey(0)
-
-cv2.imshow("gray logo", text_image_gray)
-cv2.waitKey(0)
-
-h = text_image_gray.shape[0]
-w = text_image_gray.shape[1]
-to_be_delete = []
-culmulative = np.sum(text_image_gray, axis=0)
-for i, col in enumerate(culmulative):
-    if col < 1:
-        cv2.line(text_image, (i, 0), (i, 100), (255, 175, 12), thickness=1)
-        to_be_delete += [i]
-text_image_gray = np.delete(text_image_gray, to_be_delete, axis=1)
-cv2.imshow("image", text_image_gray)
-cv2.waitKey(0)
 
 
 def preprocess_text(text_image):

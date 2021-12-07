@@ -30,7 +30,9 @@ if __name__ == "__main__":
     cnt_predict = 0
 
     start_time = time.time()
+
     for filename in list_files:
+        print(filename)
         img = cv2.imread(os.path.join(input_folder, filename))
         print(img.shape)
         try:

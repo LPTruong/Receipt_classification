@@ -34,25 +34,25 @@ class HoadonOCR:
     def find_label(self, img):
         cropped = cv2.resize(preprocessing(img), (600, 600), cv2.INTER_NEAREST)
         # cv2.imshow(cropped)
-        pred = 4
+        pred = 3
 
         for box in crop_logo(cropped.copy()):
             if (image_align(cropped[box[1]:box[1] + box[3], box[0]:box[0] + box[2]].copy(), \
                             logo_phuclong2, ratio_thresh=0.65, accept_thresh=3)):
-                pred = 3
+                pred = 2
                 break
             elif (image_align(cropped[box[1]:box[1] + box[3], box[0]:box[0] + box[2]].copy(), \
                               logo_phuclong1, ratio_thresh=0.7, accept_thresh=3)):
-                pred = 3
+                pred = 2
                 break
             elif (image_align(cropped[box[1]:box[1] + box[3], box[0]:box[0] + box[2]].copy(), \
                               logo_starbuck, ratio_thresh=0.7, accept_thresh=4)):
-                pred = 2
+                pred = 1
                 break
             else:
-                pred = 4
+                pred = 3
 
-        if (pred == 4):
+        if (pred == 3):
             boxes = remove_non_text(trim_boxes(findBoundingBox(cropped.copy(), \
                                                                segmenation_blur_params, segmenation_erode_params)),
                                     cropped)
@@ -65,4 +65,4 @@ class HoadonOCR:
                     pred = 0
                     crop_img = cropped[box[1]:box[1] + box[3], box[0]:box[0] + box[2]].copy()
 
-        return self.labels[random.randint(0, 3)]
+        return self.labels[pred]

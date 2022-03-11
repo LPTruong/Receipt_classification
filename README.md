@@ -30,11 +30,6 @@ xử lí ảnh thông thường để giải bài toán.
 tập ảnh hiện tại
 - Phần báo cáo: cách tiếp cận, kết quả chạy thử, tổ chức chương trình 
 
-## Timeline
-
-+ week 09: hoàn thiện danh sách nhóm
-+ week 12: nộp code + báo cáo, điểm sẽ được chấm ở week 13/14 (online)
-
 ## Giới hạn
 Việc sử dụng thêm các thư viện ngoài là không được phép.
 
@@ -45,10 +40,3 @@ Số ảnh được test không quá 30 ảnh, kích thước không quá 2048x2
 Các bạn chỉ được sử dụng các thư viện đi kèm trong `requirements.txt`.
 
 Mô hình được sử dụng không quá 50MB 
-
-## Các phần nâng cao
-
-Các phần được cộng thêm điểm:
-+ Xử lý các bài toán con: cắt hoá đơn, xoay hoá đơn, cân bằng sáng
-+ Tự thu thập và kiểm tra trên tập dữ liệu thu thập được
-+ Mở rộng bài toán: cho nhiều loại hoá đơn, nhận dạng các thông tin khác như giá tiền
